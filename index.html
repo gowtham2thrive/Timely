@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intelligent Time Table Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <div class="control-panel">
+            <header class="app-header">
+                <div class="app-title">
+                    <h1>Timely</h1>
+                    <span>-by Gowtham Kondapalli</span>
+                </div>
+                <div class="header-controls">
+                    <button id="theme-toggle" class="icon-btn">
+                        <span class="material-symbols-outlined sun-icon">light_mode</span>
+                        <span class="material-symbols-outlined moon-icon">dark_mode</span>
+                    </button>
+                    <button id="clear-all-btn" class="danger-btn">
+                        <span class="material-symbols-outlined">delete_sweep</span>
+                        Clear All
+                    </button>
+                </div>
+            </header>
+
+            <div class="config-section">
+                <h2><span class="material-symbols-outlined">tune</span>Configuration</h2>
+                <div class="slider-group">
+                    <label for="periods-per-day">Periods per Day: <span id="periods-per-day-value">8</span></label>
+                    <input type="range" id="periods-per-day" min="1" max="12" value="8">
+                </div>
+                <div class="slider-group">
+                    <label for="start-time">Start Time: <span id="start-time-value">9:00 AM</span></label>
+                    <input type="range" id="start-time" min="0" max="16" value="8">
+                </div>
+                <div class="slider-group">
+                    <label for="period-duration">Period Duration (mins): <span id="period-duration-value">45</span></label>
+                    <input type="range" id="period-duration" min="30" max="90" value="45">
+                </div>
+                 <div class="slider-group">
+                    <label for="lunch-break-at">Lunch Break After Period: <span id="lunch-break-at-value">4</span></label>
+                    <input type="range" id="lunch-break-at" min="0" max="12" value="4">
+                </div>
+            </div>
+
+            <div class="config-section" id="faculty-management">
+                <h2><span class="material-symbols-outlined">school</span>Faculty & Subjects</h2>
+                <div id="faculty-list-container"></div>
+                <div class="add-form">
+                    <input type="text" id="faculty-name-input" placeholder="Enter new faculty name">
+                    <button id="add-faculty-btn">
+                        <span class="material-symbols-outlined">add</span>Add Faculty
+                    </button>
+                </div>
+            </div>
+            
+            <div class="config-section">
+                <h2><span class="material-symbols-outlined">groups</span>Sections & Assignments</h2>
+                <div id="section-tags-container"></div>
+                <div class="add-form">
+                    <input type="text" id="section-name-input" placeholder="e.g., CSE-A">
+                    <button id="add-section-btn">
+                        <span class="material-symbols-outlined">add</span>Add Section
+                    </button>
+                </div>
+            </div>
+
+            <div id="courses-container"></div>
+
+            <button id="generate-btn" class="cta-btn">
+                <span class="material-symbols-outlined">auto_awesome</span>
+                <span class="btn-text">Generate Timetables</span>
+                <span class="spinner" style="display: none;"></span>
+            </button>
+        </div>
+
+        <div class="output-panel">
+            <div id="output-placeholder" class="placeholder-card">
+                <span class="material-symbols-outlined placeholder-icon">table_chart_view</span>
+                <h2>Your Timetables Will Appear Here</h2>
+                <p>Configure your setup and click "Generate".</p>
+            </div>
+            <div id="timetables-container"></div>
+        </div>
+    </div>
+
+    <div id="summary-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="modal-close material-symbols-outlined">close</span>
+            <h2 id="modal-title">Section Summary</h2>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

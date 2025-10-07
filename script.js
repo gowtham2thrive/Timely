@@ -201,18 +201,34 @@ document.addEventListener('DOMContentLoaded', () => {
             const card = document.createElement('div');
             card.className = `course-assignment-card ${sub.type}`;
 
+            let fieldsHTML = '';
+            if (sub.type === 'lab') {
+                fieldsHTML = `
+                    <div class="assignment-fields-container">
+                        <div class="assignment-field">
+                            <label>Periods/Instance</label>
+                            <input type="number" value="${assign.periods || 2}" min="1" onchange="updateAssignment('${assign.id}', 'periods', this.value)">
+                        </div>
+                        <div class="assignment-field">
+                            <label>Instances/Week</label>
+                            <input type="number" value="${assign.instances || 1}" min="1" onchange="updateAssignment('${assign.id}', 'instances', this.value)">
+                        </div>
+                    </div>`;
+            } else {
+                fieldsHTML = `
+                    <div class="assignment-field">
+                        <label>Hours/Week</label>
+                        <input type="number" value="${assign.hours || 1}" min="1" onchange="updateAssignment('${assign.id}', 'hours', this.value)">
+                    </div>`;
+            }
+
             card.innerHTML = `
-                <button class="icon-btn danger-btn card-delete-btn" onclick="removeAssignment('${assign.id}')" aria-label="Remove assignment ${sub.name}"><span class="material-symbols-outlined">close</span></button>
+                <button class="icon-btn card-delete-btn" onclick="removeAssignment('${assign.id}')" aria-label="Remove assignment ${sub.name}"><span class="material-symbols-outlined">close</span></button>
                 <div class="assignment-details">
                     <strong>${sub.name}</strong> 
                     <span>by ${fac.name}</span>
                 </div>
-                <div class="assignment-field">
-                    ${sub.type === 'lab' ? 
-                        `<label>Instances/Week</label><input type="number" value="${assign.instances || 1}" min="1" onchange="updateAssignment('${assign.id}', 'instances', this.value)" aria-label="Instances per week for ${sub.name}">` :
-                        `<label>Hours/Week</label><input type="number" value="${assign.hours || 1}" min="1" onchange="updateAssignment('${assign.id}', 'hours', this.value)" aria-label="Hours per week for ${sub.name}">`
-                    }
-                </div>
+                ${fieldsHTML}
                 <button class="secondary-btn" onclick="showAssignmentPrefsModal('${assign.id}')"><span class="material-symbols-outlined">tune</span>Preferences</button>
                 `;
             container.appendChild(card);

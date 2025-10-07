@@ -217,13 +217,15 @@ hr.config-divider {
 .in-charge-selector select { flex-grow: 1; }
 
 .course-assignment-card {
-    padding: 1rem; margin-bottom: 1rem; border-left: 5px solid; position: relative;
+    padding: 1rem 1rem 1rem 1.25rem; margin-bottom: 1rem; border-left: 5px solid; position: relative;
     border-radius: var(--radius); border: 1px solid var(--border-color);
     display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 1rem;
     background-color: var(--surface-color);
 }
 .assignment-details strong { font-size: 1.05rem; font-weight: 600; display: block; }
 .assignment-details span { font-size: 0.9rem; color: var(--text-muted); }
+
+.assignment-fields-container { display: flex; gap: 1rem; }
 .assignment-field { display: flex; flex-direction: column; }
 .assignment-field label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.25rem; }
 .assignment-field input { max-width: 100px; padding: 0.5rem; }
@@ -233,11 +235,18 @@ hr.config-divider {
 .course-assignment-card.activity { border-left-color: var(--activity-accent); }
 
 .card-delete-btn {
-    position: absolute; top: 0.75rem; right: 0.75rem;
+    position: absolute; top: -10px; right: -10px;
     width: 28px; height: 28px; padding: 0; border-radius: 50%;
     display: flex; align-items: center; justify-content: center; z-index: 10;
-    background-color: var(--surface-color); border: 1px solid var(--border-color);
-    color: var(--danger-color); font-size: 1.2rem;
+    background-color: var(--danger-color);
+    color: white;
+    border: 2px solid var(--surface-color);
+    box-shadow: var(--shadow);
+    font-size: 1.2rem;
+    transition: transform 0.2s ease;
+}
+.card-delete-btn:hover {
+    transform: scale(1.1);
 }
 
 .preference-row {
@@ -265,6 +274,16 @@ hr.config-divider {
 
 .placeholder-card { text-align: center; color: var(--text-muted); padding: 5rem 2rem; }
 .placeholder-icon { font-size: 4rem; margin-bottom: 1rem; color: var(--primary-color); opacity: 0.5; }
+
+.placeholder-card h2 {
+    display: block;
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
 
 .tab-buttons {
     display: flex; border-bottom: 1px solid var(--border-color);
@@ -365,4 +384,5 @@ hr.config-divider {
     .add-subject-form { display: flex; gap: 0.75rem; flex-direction: column; }
     .course-assignment-card { grid-template-columns: 1fr; }
     .assignment-field input { max-width: none; }
+    .assignment-fields-container { justify-content: space-around; }
 }

@@ -546,7 +546,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                     if (coursesInSlot && coursesInSlot.length > 0 && !coursesInSlot[0].isContinuation) {
                                         const duration = coursesInSlot[0].totalDuration || 1;
                                         const cellClass = coursesInSlot.length > 1 ? 'split-lab-cell' : coursesInSlot[0].type;
-                                        const cellContent = coursesInSlot.map(c => `<div class="course-item"><strong>${c.name}</strong><br><small>${c.faculty}</small></div>`).join('');
+                                        // THIS IS THE CHANGE: Faculty name is removed from the cell
+                                        const cellContent = coursesInSlot.map(c => `<div class="course-item"><strong>${c.name}</strong></div>`).join('');
                                         rowHTML += `<td class="${cellClass}" colspan="${duration}">${cellContent}</td>`;
                                         period += duration;
                                     } else if (!coursesInSlot || coursesInSlot.length === 0) {

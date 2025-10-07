@@ -50,7 +50,6 @@ body {
 /* =================================================================== */
 .app-container {
     display: grid;
-    /* This minmax(0, 1fr) is the key fix to prevent the layout from stretching */
     grid-template-columns: 500px minmax(0, 1fr);
     gap: 3rem;
     padding: 3rem;
@@ -77,6 +76,7 @@ body {
     background: var(--surface-color); border: 1px solid var(--border-color);
     color: var(--text-muted); box-shadow: var(--shadow);
     transition: all 0.2s ease-out;
+    cursor: pointer;
 }
 .icon-btn:hover { background-color: var(--bg-color); color: var(--text-color); }
 
@@ -136,7 +136,6 @@ h2 {
 }
 .add-form { display: flex; gap: 1rem; }
 
-/* --- NEW --- Style for main "add" forms at the bottom of sections */
 .config-section > .add-form {
     margin-top: 1.5rem;
     padding: 1rem;
@@ -273,7 +272,7 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.1); }
     align-items: center;
 }
 .assignment-grid .assignment-details {
-    grid-column: 1 / -1; /* Span full width */
+    grid-column: 1 / -1;
     padding-right: 2rem;
     margin-bottom: 0.5rem;
 }
@@ -294,8 +293,6 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.1); }
 [data-theme="dark"] .course-assignment-card.lab { background-color: rgba(59, 130, 246, 0.05); }
 [data-theme="dark"] .course-assignment-card.activity { background-color: rgba(234, 88, 12, 0.05); }
 
-
-/* --- Shared style for corner delete button --- */
 .card-delete-btn {
     position: absolute;
     top: -12px;
@@ -314,8 +311,6 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.1); }
     border-color: var(--surface-color);
 }
 
-
-/* --- Improved Preferences Dropdown --- */
 details {
     background-color: var(--bg-color);
     border: 1px solid var(--border-color);
@@ -356,7 +351,7 @@ details[open] summary::before { transform: rotate(90deg); }
 
 
 /* =================================================================== */
-/* ======================= OUTPUT PANEL & TABLE ====================== */
+/* ======================= OUTPUT PANEL & TABS ======================= */
 /* =================================================================== */
 .output-panel {
     padding: 2.5rem;
@@ -365,11 +360,41 @@ details[open] summary::before { transform: rotate(90deg); }
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow-lg);
     max-height: calc(100vh - 6rem);
-    overflow: auto; /* Allow vertical and horizontal scrolling */
+    overflow: auto;
 }
 
 .placeholder-card { text-align: center; color: var(--text-muted); padding-top: 5rem; }
 .placeholder-icon { font-size: 4rem; margin-bottom: 1rem; }
+
+.tab-buttons {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 2rem;
+}
+.tab-button {
+    background: none;
+    border: none;
+    padding: 1rem 1.5rem;
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text-muted);
+    border-bottom: 3px solid transparent;
+    transform: translateY(1px);
+    box-shadow: none;
+}
+.tab-button:hover {
+    color: var(--text-color);
+}
+.tab-button.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+.tab-content {
+    display: none;
+}
+.tab-content.active {
+    display: block;
+}
 
 .timetable-header {
     position: relative;
@@ -389,16 +414,6 @@ details[open] summary::before { transform: rotate(90deg); }
 }
 
 .timetable-header h3 { font-size: 1.75rem; font-weight: 700; color: var(--primary-color); }
-
-.timetable-header .in-charge-badge {
-    background-color: var(--activity-accent);
-    color: white;
-    padding: 0.3rem 0.8rem;
-    border-radius: 999px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    margin-top: 0.5rem;
-}
 
 .timetable-header .actions {
     display: flex;
@@ -475,7 +490,7 @@ details[open] summary::before { transform: rotate(90deg); }
     border: 1px solid rgba(244, 63, 94, 0.2);
     border-radius: var(--radius);
     padding: 1.5rem;
-    margin-top: 1.5rem;
+    margin-top: 2rem;
 }
 .unassigned-list h4 {
     color: var(--danger-color);
@@ -503,7 +518,7 @@ details[open] summary::before { transform: rotate(90deg); }
 }
 
 .faculty-list {
-    margin-top: 1.5rem;
+    margin-top: 2rem;
 }
 
 .faculty-table {
@@ -552,17 +567,7 @@ details[open] summary::before { transform: rotate(90deg); }
     .app-container { grid-template-columns: 1fr; padding: 1.5rem; gap: 2rem; }
     .control-panel { max-height: none; overflow-y: visible; }
     .output-panel {
-        max-height: 80vh; /* Allow output panel to scroll on mobile */
-    }
-
-    .timetable-table-container::after {
-        content: '';
-        position: absolute; right: 0; top: 0; bottom: 0;
-        width: 50px;
-        background: linear-gradient(to left, var(--surface-color), transparent);
-        pointer-events: none;
-        border-top-right-radius: var(--radius);
-        border-bottom-right-radius: var(--radius);
+        max-height: 80vh;
     }
     
     .add-form,

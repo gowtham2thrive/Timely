@@ -168,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
         block.className = 'section-block';
 
         const assignedFacultyIds = new Set(state.assignments[section.id].map(a => a.facultyId));
-        const existingInCharges = new Set(state.sections.map(s => s.inCharge).filter(id => id && id !== section.inCharge));
+        const existingInCharges = new Set(state.sections.filter(s => s.id !== section.id).map(s => s.inCharge).filter(id => id));
 
         const inChargeOptions = state.faculty
             .filter(f => assignedFacultyIds.has(f.id) && !existingInCharges.has(f.id))
@@ -176,12 +176,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const facultyOptions = state.faculty.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
         
+        // Ensure the current in-charge is in the list even if they are an in-charge elsewhere (for display purposes)
+        const currentInCharge = state.faculty.find(f => f.id === section.inCharge);
+        let finalOptions = inChargeOptions;
+        if (currentInCharge && existingInCharges.has(currentInCharge.id)) {
+            finalOptions = `<option value="${currentInCharge.id}" selected>${currentInCharge.name}</option>` + finalOptions;
+        }
+
+
         block.innerHTML = `
             <h3>${section.name} - Course Assignments</h3>
             <div class="in-charge-selector">
                 <label for="in-charge-select-${section.id}">In-Charge:</label>
-                <select id="in-charge-select-${section.id}" onchange="updateInCharge('${section.id}', this.value)" ${!inChargeOptions ? 'disabled' : ''}>
-                    ${inChargeOptions || '<option>-- No staff assigned --</option>'}
+                <select id="in-charge-select-${section.id}" onchange="updateInCharge('${section.id}', this.value)" ${!finalOptions ? 'disabled' : ''}>
+                    ${finalOptions || '<option>-- No staff available --</option>'}
                 </select>
             </div>
             <div id="assignments-list-${section.id}"></div>
@@ -197,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderAssignmentsForSection(sectionId) {
         const container = document.getElementById(`assignments-list-${sectionId}`);
         container.innerHTML = '';
-        state.assignments[sectionId].forEach(assign => {
+        (state.assignments[sectionId] || []).forEach(assign => {
             const fac = state.faculty.find(f => f.id === assign.facultyId);
             const sub = fac?.subjects.find(s => s.id === assign.subjectId);
             if (!fac || !sub) return;
@@ -307,7 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const section = state.sections.find(s => s.id === sectionId);
         if (section) {
             section.inCharge = facultyId;
-            renderAll(); // Re-render to update dropdowns in other sections
+            renderAll(); 
         }
     };
     
@@ -418,7 +426,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (timetableWorker) {
                 timetableWorker.terminate();
             }
-            timetableWorker = new Worker('worker.js');
+            timetableWorker = new Worker('./worker.js');
 
             btnText.textContent = 'Generating...';
             spinner.style.display = 'inline-block';
@@ -454,20 +462,37 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function renderOutputArea() {
+        timetablesContainer.innerHTML = ''; 
         if (lastGenerationResults) {
             renderAllTimetables(lastGenerationResults);
         } else if (state.sections.length > 0) {
             renderInitialTimetables();
         } else {
-            timetablesContainer.innerHTML = '';
             outputPlaceholder.style.display = 'block';
         }
     }
     
     function renderInitialTimetables() {
-        timetablesContainer.innerHTML = '';
         outputPlaceholder.style.display = 'none';
-        state.sections.forEach(section => {
+        
+        const tabButtons = document.createElement('div');
+        tabButtons.className = 'tab-buttons';
+        
+        const tabContents = document.createElement('div');
+        tabContents.className = 'tab-contents';
+
+        state.sections.forEach((section, index) => {
+            const button = document.createElement('button');
+            button.className = 'tab-button';
+            if (index === 0) button.classList.add('active');
+            button.dataset.sectionId = section.id;
+            button.textContent = section.name;
+            
+            const content = document.createElement('div');
+            content.className = 'tab-content';
+            if (index === 0) content.classList.add('active');
+            content.id = `content-${section.id}`;
+
             const card = document.createElement('div');
             card.className = 'timetable-card';
             const timeSlots = [];
@@ -492,18 +517,41 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     return rowHTML + `</tr>`;
                 }).join('')}</tbody></table></div>`;
-            timetablesContainer.appendChild(card);
+            
+            content.appendChild(card);
+            tabButtons.appendChild(button);
+            tabContents.appendChild(content);
         });
+
+        timetablesContainer.appendChild(tabButtons);
+        timetablesContainer.appendChild(tabContents);
     }
     
     function renderAllTimetables(results) {
-        timetablesContainer.innerHTML = '';
         outputPlaceholder.style.display = 'none';
         if (!results || !results.timetables || state.sections.length === 0) {
             renderInitialTimetables();
             return;
         }
-        state.sections.forEach(section => {
+
+        const tabButtons = document.createElement('div');
+        tabButtons.className = 'tab-buttons';
+        
+        const tabContents = document.createElement('div');
+        tabContents.className = 'tab-contents';
+
+        state.sections.forEach((section, index) => {
+            const button = document.createElement('button');
+            button.className = 'tab-button';
+            if (index === 0) button.classList.add('active');
+            button.dataset.sectionId = section.id;
+            button.textContent = section.name;
+
+            const content = document.createElement('div');
+            content.className = 'tab-content';
+            if (index === 0) content.classList.add('active');
+            content.id = `content-${section.id}`;
+
             const timetable = results.timetables[section.id];
             const unassigned = results.unassigned[section.id] || [];
             const inCharge = state.faculty.find(f => f.id === section.inCharge);
@@ -604,12 +652,28 @@ document.addEventListener('DOMContentLoaded', () => {
             infoContainer.className = 'timetable-info';
             infoContainer.innerHTML = facultyHTML + unassignedHTML;
             card.appendChild(infoContainer);
-
-            timetablesContainer.appendChild(card);
+            content.appendChild(card);
+            tabButtons.appendChild(button);
+            tabContents.appendChild(content);
         });
+
+        timetablesContainer.appendChild(tabButtons);
+        timetablesContainer.appendChild(tabContents);
+        
         document.querySelectorAll('.summary-btn').forEach(btn => btn.addEventListener('click', showSummaryModal));
         document.querySelectorAll('.download-pdf-btn').forEach(btn => btn.addEventListener('click', downloadPDF));
     }
+
+    timetablesContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('tab-button')) {
+            const sectionId = e.target.dataset.sectionId;
+            timetablesContainer.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            timetablesContainer.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            e.target.classList.add('active');
+            const contentToShow = document.getElementById(`content-${sectionId}`);
+            if(contentToShow) contentToShow.classList.add('active');
+        }
+    });
 
     function showSummaryModal(e) {
         const sectionId = e.currentTarget.dataset.sectionId;
@@ -619,7 +683,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const modalBody = document.getElementById('modal-body');
         modalBody.innerHTML = '';
         ['subject', 'lab', 'activity'].forEach(type => {
-            const filteredAssignments = state.assignments[sectionId]?.filter(a => state.faculty.find(f => f.id === a.facultyId)?.subjects.find(s => s.id === a.subjectId)?.type === type) || [];
+            const filteredAssignments = (state.assignments[sectionId] || []).filter(a => state.faculty.find(f => f.id === a.facultyId)?.subjects.find(s => s.id === a.subjectId)?.type === type);
             if (filteredAssignments.length > 0) {
                 modalBody.innerHTML += `<h4>${type.charAt(0).toUpperCase() + type.slice(1)}s</h4><ul>`;
                 filteredAssignments.forEach(a => {

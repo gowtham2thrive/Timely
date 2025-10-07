@@ -125,13 +125,15 @@ document.addEventListener('DOMContentLoaded', () => {
             card.className = 'faculty-card';
             card.innerHTML = `
                 <div class="faculty-info">
-                     <button class="icon-btn danger-btn card-delete-btn" onclick="removeFaculty('${fac.id}')" aria-label="Remove faculty ${fac.name}"><span class="material-symbols-outlined">close</span></button>
                     <div class="faculty-header"><h4>${fac.name}</h4></div>
                     <div class="subjects-list">
-                        ${fac.subjects.map(sub => `<div class="subject-tag"><span>${sub.name} (${sub.type})</span></div>`).join('') || '<p class="text-muted">No subjects assigned.</p>'}
+                        ${fac.subjects.map(sub => `<div class="subject-tag"><span>${sub.name}</span></div>`).join('') || '<p class="text-muted" style="margin-top:0.5rem;font-size:0.9rem;">No subjects assigned.</p>'}
                     </div>
                 </div>
-                <button class="secondary-btn" onclick="showFacultyModal('${fac.id}')"><span class="material-symbols-outlined">edit</span>Manage</button>
+                <div style="display:flex; gap: 0.5rem;">
+                    <button class="icon-btn danger-btn" onclick="removeFaculty('${fac.id}')" aria-label="Remove faculty ${fac.name}"><span class="material-symbols-outlined">delete</span></button>
+                    <button class="secondary-btn" onclick="showFacultyModal('${fac.id}')"><span class="material-symbols-outlined">edit</span>Manage</button>
+                </div>
             `;
             facultyListContainer.appendChild(card);
         });
@@ -200,16 +202,16 @@ document.addEventListener('DOMContentLoaded', () => {
             card.className = `course-assignment-card ${sub.type}`;
 
             card.innerHTML = `
+                <button class="icon-btn danger-btn card-delete-btn" onclick="removeAssignment('${assign.id}')" aria-label="Remove assignment ${sub.name}"><span class="material-symbols-outlined">close</span></button>
                 <div class="assignment-details">
-                    <button class="icon-btn danger-btn card-delete-btn" onclick="removeAssignment('${assign.id}')" aria-label="Remove assignment ${sub.name}"><span class="material-symbols-outlined">close</span></button>
-                    <strong>${sub.name}</strong> <span>by ${fac.name}</span>
-                    <div class="assignment-grid">
-                        ${sub.type === 'lab' ? 
-                            `<label>Periods/Instance</label><input type="number" value="${assign.periods || 2}" min="1" onchange="updateAssignment('${assign.id}', 'periods', this.value)" aria-label="Periods per instance for ${sub.name}">
-                             <label>Instances/Week</label><input type="number" value="${assign.instances || 1}" min="1" onchange="updateAssignment('${assign.id}', 'instances', this.value)" aria-label="Instances per week for ${sub.name}">` :
-                            `<label>Hours/Week</label><input type="number" value="${assign.hours || 1}" min="1" onchange="updateAssignment('${assign.id}', 'hours', this.value)" aria-label="Hours per week for ${sub.name}">`
-                        }
-                    </div>
+                    <strong>${sub.name}</strong> 
+                    <span>by ${fac.name}</span>
+                </div>
+                <div class="assignment-field">
+                    ${sub.type === 'lab' ? 
+                        `<label>Instances/Week</label><input type="number" value="${assign.instances || 1}" min="1" onchange="updateAssignment('${assign.id}', 'instances', this.value)" aria-label="Instances per week for ${sub.name}">` :
+                        `<label>Hours/Week</label><input type="number" value="${assign.hours || 1}" min="1" onchange="updateAssignment('${assign.id}', 'hours', this.value)" aria-label="Hours per week for ${sub.name}">`
+                    }
                 </div>
                 <button class="secondary-btn" onclick="showAssignmentPrefsModal('${assign.id}')"><span class="material-symbols-outlined">tune</span>Preferences</button>
                 `;
@@ -448,11 +450,13 @@ document.addEventListener('DOMContentLoaded', () => {
             renderInitialTimetables();
         } else {
             outputPlaceholder.style.display = 'block';
+            timetablesContainer.style.display = 'none';
         }
     }
     
     function renderInitialTimetables() {
         outputPlaceholder.style.display = 'none';
+        timetablesContainer.style.display = 'block';
         
         const tabButtons = document.createElement('div');
         tabButtons.className = 'tab-buttons';
@@ -509,6 +513,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderAllTimetables(results) {
         timetablesContainer.innerHTML = '';
         outputPlaceholder.style.display = 'none';
+        timetablesContainer.style.display = 'block';
         
         if (!results || !results.timetables || state.sections.length === 0) {
             renderInitialTimetables();
@@ -533,8 +538,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (timetable) {
                 for (const day of DAYS) {
                     for (let i = 0; i < state.config.periodsPerDay; i++) {
-                        const isLunchBreak = state.config.lunchBreakAt > 0 && i === state.config.lunchBreakAt;
-                        if (!isLunchBreak && (!timetable[day][i] || timetable[day][i].length === 0)) {
+                        const isLunchBreakSlot = state.config.lunchBreakAt > 0 && (i + 1) === state.config.lunchBreakAt + 1;
+                        if (!isLunchBreakSlot && (!timetable[day][i] || timetable[day][i].length === 0)) {
                             hasEmptySlots = true;
                             break;
                         }
@@ -694,7 +699,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 modalBody.innerHTML += `</ul>`;
             }
         });
-        summaryModal.style.display = 'flex';
+        summaryModal.classList.add('show');
     }
 
     window.showFacultyModal = (facId) => {
@@ -703,7 +708,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         document.getElementById('faculty-modal-title').textContent = `Manage ${fac.name}`;
         const modalBody = document.getElementById('faculty-modal-body');
-        const gridCols = `30px repeat(${state.config.periodsPerDay}, 1fr)`;
+        const gridCols = `35px repeat(${state.config.periodsPerDay}, 1fr)`;
 
         modalBody.innerHTML = `
             <h4>Subjects Taught</h4>
@@ -729,16 +734,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 `).join('')}
             </div>
         `;
-        facultyModal.style.display = 'flex';
+        facultyModal.classList.add('show');
     };
 
     window.showAssignmentPrefsModal = (assignId) => {
-        let assignment, sectionId;
+        let assignment;
         for (const secId in state.assignments) {
             const found = state.assignments[secId].find(a => a.id === assignId);
             if (found) {
                 assignment = found;
-                sectionId = secId;
                 break;
             }
         }
@@ -759,16 +763,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const pref = assignment.preferences[i] || { day: 'Any Day', period: 'Any Period' };
             const dayOptions = ['Any Day', ...DAYS].map(d => `<option value="${d}" ${pref.day === d ? 'selected' : ''}>${d}</option>`).join('');
             html += `<div class="preference-row">
-                <span>Instance ${i + 1}:</span>
-                <label class="sr-only" for="pref-day-${assignment.id}-${i}">Preference Day ${i+1}</label>
+                <span>Instance ${i + 1}</span>
                 <select id="pref-day-${assignment.id}-${i}" onchange="updatePreference('${assignment.id}', ${i}, 'day', this.value)">${dayOptions}</select>
-                <label class="sr-only" for="pref-period-${assignment.id}-${i}">Preference Period ${i+1}</label>
                 <select id="pref-period-${assignment.id}-${i}" onchange="updatePreference('${assignment.id}', ${i}, 'period', this.value)">${periods.map(p => `<option value="${p}" ${pref.period === p ? 'selected' : ''}>${p}</option>`).join('')}</select>
                 </div>`;
         }
         html += '</div>';
         modalBody.innerHTML = html;
-        assignmentModal.style.display = 'flex';
+        assignmentModal.classList.add('show');
     };
 
 
@@ -917,12 +919,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Setup modal closing
     [summaryModal, facultyModal, assignmentModal].forEach(modal => {
         if(modal) {
-            modal.querySelector('.modal-close').addEventListener('click', () => modal.style.display = 'none');
-        }
-    });
-    window.addEventListener('click', (e) => { 
-        if (e.target.classList.contains('modal')) {
-            e.target.style.display = 'none'; 
+            modal.querySelector('.modal-close').addEventListener('click', () => modal.classList.remove('show'));
+            modal.addEventListener('click', (e) => {
+                if(e.target === modal) {
+                    modal.classList.remove('show');
+                }
+            });
         }
     });
 

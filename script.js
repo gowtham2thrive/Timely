@@ -168,8 +168,10 @@ document.addEventListener('DOMContentLoaded', () => {
         block.className = 'section-block';
 
         const assignedFacultyIds = new Set(state.assignments[section.id].map(a => a.facultyId));
+        const existingInCharges = new Set(state.sections.map(s => s.inCharge).filter(id => id && id !== section.inCharge));
+
         const inChargeOptions = state.faculty
-            .filter(f => assignedFacultyIds.has(f.id))
+            .filter(f => assignedFacultyIds.has(f.id) && !existingInCharges.has(f.id))
             .map(f => `<option value="${f.id}" ${section.inCharge === f.id ? 'selected' : ''}>${f.name}</option>`).join('');
 
         const facultyOptions = state.faculty.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
@@ -305,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const section = state.sections.find(s => s.id === sectionId);
         if (section) {
             section.inCharge = facultyId;
-            saveState();
+            renderAll(); // Re-render to update dropdowns in other sections
         }
     };
     
@@ -505,7 +507,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const timetable = results.timetables[section.id];
             const unassigned = results.unassigned[section.id] || [];
             const inCharge = state.faculty.find(f => f.id === section.inCharge);
-            const inChargeHTML = inCharge ? `<span class="in-charge-badge">In-Charge: ${inCharge.name}</span>` : '';
             
             const card = document.createElement('div');
             card.className = 'timetable-card';
@@ -520,7 +521,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             const facultyMap = {};
-            state.assignments[section.id].forEach(assign => {
+            (state.assignments[section.id] || []).forEach(assign => {
                 const fac = state.faculty.find(f => f.id === assign.facultyId);
                 const sub = fac?.subjects.find(s => s.id === assign.subjectId);
                 if (fac && sub) {
@@ -529,7 +530,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            // THIS IS THE CHANGE: Generate HTML for the faculty table
             const facultyTableRowsHTML = Object.entries(facultyMap).map(([name, subs]) => {
                 let displayName = name;
                 if (inCharge && inCharge.name === name) {
@@ -550,12 +550,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     </table>
                 </div>` : '';
 
-
             card.innerHTML = `
                 <div class="timetable-header">
                     <div class="header-info">
                         <h3>${section.name}</h3>
-                        ${inChargeHTML}
                     </div>
                     <div class="actions">
                         <button class="summary-btn" data-section-id="${section.id}"><span class="material-symbols-outlined">summarize</span>Summary</button>
@@ -638,6 +636,7 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.style.display = 'flex';
     }
 
+
     async function downloadPDF(e) {
         const sectionId = e.currentTarget.dataset.sectionId;
         const section = state.sections.find(s => s.id === sectionId);
@@ -657,12 +656,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         page.drawText(`${section.name} - Weekly Timetable`, { x: margin, y: currentY, font: boldFont, size: 22, color: colors.title });
         
-        if (inCharge) {
-            const inChargeText = `In-Charge: ${inCharge.name}`;
-            const inChargeWidth = boldFont.widthOfTextAtSize(inChargeText, 10);
-            page.drawText(inChargeText, { x: width - margin - inChargeWidth, y: currentY + 5, font: boldFont, size: 10, color: colors.muted });
-        }
-
         currentY -= 40;
         const tableElement = document.getElementById(`table-${section.id}`);
         if (!tableElement) {
@@ -699,9 +692,8 @@ document.addEventListener('DOMContentLoaded', () => {
             currentY -= rowHeight;
         });
         
-        // THIS IS THE CHANGE: Faculty list is now drawn as a table
         const facultyMap = {};
-        state.assignments[sectionId]?.forEach(a => { 
+        (state.assignments[sectionId] || []).forEach(a => { 
             const fac = state.faculty.find(f => f.id === a.facultyId); 
             const sub = fac?.subjects.find(s => s.id === a.subjectId); 
             if(fac && sub) { 
@@ -736,6 +728,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     displayName += " (Incharge)";
                 }
                 const subjectsText = Array.from(subs).join(', ');
+                
                 const wrappedSubs = getWrappedText(subjectsText, font, 9, subjectColWidth - 10);
                 const requiredHeight = Math.max(22, wrappedSubs.length * 12 + 10);
 

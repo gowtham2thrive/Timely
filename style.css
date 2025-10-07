@@ -69,7 +69,10 @@ body {
 }
 .control-panel {
     display: flex; flex-direction: column; gap: 2.5rem;
-    max-height: calc(100vh - 6rem); overflow-y: auto; padding: 0 1rem;
+    max-height: calc(100vh - 6rem); 
+    overflow-y: auto; 
+    padding: 0 1rem;
+    align-self: start; /* <--- THIS IS THE FIX */
 }
 .control-panel::-webkit-scrollbar { width: 8px; }
 .control-panel::-webkit-scrollbar-track { background: transparent; }
@@ -577,7 +580,11 @@ details[open] summary::before { transform: rotate(90deg); }
 /* =================================================================== */
 @media (max-width: 1200px) {
     .app-container { grid-template-columns: 1fr; padding: 1.5rem; gap: 2rem; }
-    .control-panel { max-height: none; overflow-y: visible; }
+    .control-panel { 
+        max-height: none; 
+        overflow-y: visible; 
+        align-self: normal;
+    }
     .output-panel {
         max-height: 80vh;
     }

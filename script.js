@@ -518,6 +518,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 timeSlots.push(`${formatMinutes(start)} - ${formatMinutes(end)}`);
                 currentTime = end;
             }
+            
+            // Build the faculty map for this section
+            const facultyMap = {};
+            state.assignments[section.id].forEach(assign => {
+                const fac = state.faculty.find(f => f.id === assign.facultyId);
+                const sub = fac?.subjects.find(s => s.id === assign.subjectId);
+                if (fac && sub) {
+                    if (!facultyMap[fac.name]) facultyMap[fac.name] = new Set();
+                    facultyMap[fac.name].add(sub.name);
+                }
+            });
+
+            // Generate HTML for the faculty list
+            const facultyListHTML = Object.entries(facultyMap).map(([name, subs]) => {
+                let displayName = name;
+                if (inCharge && inCharge.name === name) {
+                    displayName += " (Incharge)";
+                }
+                return `<li><strong>${displayName}:</strong> ${Array.from(subs).join(', ')}</li>`;
+            }).join('');
+
             card.innerHTML = `
                 <div class="timetable-header">
                     <div class="header-info">
@@ -546,7 +567,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                     if (coursesInSlot && coursesInSlot.length > 0 && !coursesInSlot[0].isContinuation) {
                                         const duration = coursesInSlot[0].totalDuration || 1;
                                         const cellClass = coursesInSlot.length > 1 ? 'split-lab-cell' : coursesInSlot[0].type;
-                                        // THIS IS THE CHANGE: Faculty name is removed from the cell
                                         const cellContent = coursesInSlot.map(c => `<div class="course-item"><strong>${c.name}</strong></div>`).join('');
                                         rowHTML += `<td class="${cellClass}" colspan="${duration}">${cellContent}</td>`;
                                         period += duration;
@@ -568,14 +588,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     acc[key] = (acc[key] || 0) + 1;
                     return acc;
                 }, {});
+
             const unassignedHTML = unassigned.length > 0 ? `<div class="unassigned-list"><h4><span class="material-symbols-outlined">warning</span>Unassigned Courses</h4><ul>${Object.entries(unassignedCounts).map(([name, count]) => `<li><strong>${name}</strong> (${count}x unassigned)</li>`).join('')}</ul></div>` : '';
-            
+            const facultyHTML = facultyListHTML ? `<div class="faculty-list"><h4>Faculty & Coordinators</h4><ul>${facultyListHTML}</ul></div>` : '';
+
             const infoContainer = document.createElement('div');
             infoContainer.className = 'timetable-info';
-            infoContainer.innerHTML = unassignedHTML;
-            if (unassignedHTML) {
-                card.appendChild(infoContainer);
-            }
+            infoContainer.innerHTML = facultyHTML + unassignedHTML;
+            card.appendChild(infoContainer);
 
             timetablesContainer.appendChild(card);
         });
@@ -607,7 +627,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         modal.style.display = 'flex';
     }
-
 
     async function downloadPDF(e) {
         const sectionId = e.currentTarget.dataset.sectionId;
@@ -670,6 +689,38 @@ document.addEventListener('DOMContentLoaded', () => {
             currentY -= rowHeight;
         });
 
+        const facultyMap = {};
+        state.assignments[sectionId]?.forEach(a => { 
+            const fac = state.faculty.find(f => f.id === a.facultyId); 
+            const sub = fac?.subjects.find(s => s.id === a.subjectId); 
+            if(fac && sub) { 
+                if(!facultyMap[fac.name]) facultyMap[fac.name] = new Set();
+                facultyMap[fac.name].add(sub.name);
+            }
+        });
+
+        if (Object.keys(facultyMap).length > 0) {
+            currentY -= 20;
+            if (currentY < 100) { 
+                page = pdfDoc.addPage([841.89, 595.28]);
+                currentY = height - margin;
+            }
+            
+            page.drawText('Faculty & Subject Assignments', { x: margin, y: currentY, font: boldFont, size: 14, color: colors.title });
+            currentY -= 25;
+
+            Object.entries(facultyMap).forEach(([name, subs]) => {
+                let displayName = name;
+                if (inCharge && inCharge.name === name) {
+                    displayName += " (Incharge)";
+                }
+                const text = `  • ${displayName}: ${Array.from(subs).join(', ')}`;
+                page.drawText(text, { x: margin, y: currentY, font: font, size: 10 });
+                currentY -= 15;
+            });
+        }
+
+
         const pdfBytes = await pdfDoc.save();
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
         const link = document.createElement('a');
@@ -684,7 +735,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function formatMinutes(m) { const h = Math.floor(m / 60); const min = m % 60; return `${h % 12 === 0 ? 12 : h % 12}:${min.toString().padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`; }
     function formatTime(v) { return formatMinutes(7 * 60 + v * 15); }
 
-    // --- Enter Key Submission Logic ---
     function setupEnterKeySubmission(inputId, buttonId) {
         const input = document.getElementById(inputId);
         const button = document.getElementById(buttonId);

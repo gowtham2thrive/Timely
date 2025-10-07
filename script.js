@@ -531,7 +531,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function renderAllTimetables(results) {
+        // FIX: This function must always clear the container first
+        timetablesContainer.innerHTML = '';
         outputPlaceholder.style.display = 'none';
+        
         if (!results || !results.timetables || state.sections.length === 0) {
             renderInitialTimetables();
             return;

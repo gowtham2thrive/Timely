@@ -145,6 +145,13 @@ h2 {
     border-radius: var(--radius);
 }
 
+hr.config-divider {
+    border: none;
+    height: 1px;
+    background-color: var(--border-color);
+    margin: 2rem 0 1rem 0;
+}
+
 /* =================================================================== */
 /* ======================== CUSTOM SLIDERS =========================== */
 /* =================================================================== */
@@ -188,6 +195,37 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.1); }
 .subject-tag .remove-subject-btn { cursor: pointer; }
 .add-subject-form { display: grid; grid-template-columns: 1fr auto auto; gap: 0.5rem; margin-top: 1rem; }
 
+.availability-details {
+    margin-top: 1.5rem;
+    background-color: var(--bg-color);
+    border-radius: var(--radius);
+    padding: 1rem;
+}
+
+.availability-grid {
+    display: grid;
+    /* Dynamically set by JS, but this is a fallback */
+    grid-template-columns: 30px repeat(8, 1fr); 
+    gap: 0.5rem;
+    margin-top: 1rem;
+    text-align: center;
+    align-items: center;
+}
+
+.availability-grid .header {
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.availability-grid input[type="checkbox"] {
+    width: 1.2rem;
+    height: 1.2rem;
+    margin: 0 auto;
+    cursor: pointer;
+    accent-color: var(--primary-color);
+}
+
+
 /* =================================================================== */
 /* ===================== SECTION & COURSE ASSIGNMENT ================= */
 /* =================================================================== */
@@ -198,6 +236,31 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.1); }
 }
 .remove-tag { cursor: pointer; font-weight: bold; font-size: 1.2rem; }
 .section-block { padding: 2.5rem; border-radius: var(--radius); background-color: var(--surface-color); border: 1px solid var(--border-color); box-shadow: var(--shadow-lg); }
+
+.in-charge-selector {
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background-color: var(--primary-light);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+}
+
+[data-theme="dark"] .in-charge-selector {
+     background-color: rgba(45, 212, 191, 0.1);
+}
+
+.in-charge-selector label {
+    font-weight: 600;
+    color: var(--primary-color);
+    flex-shrink: 0;
+}
+
+.in-charge-selector select {
+    flex-grow: 1;
+}
 
 .course-assignment-card {
     padding: 1.5rem; margin-bottom: 1rem; border-left: 5px solid; position: relative;
@@ -313,15 +376,37 @@ details[open] summary::before { transform: rotate(90deg); }
     padding-bottom: 1rem;
     margin-bottom: 1.5rem;
     border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1rem;
 }
+.timetable-header .header-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
 .timetable-header h3 { font-size: 1.75rem; font-weight: 700; color: var(--primary-color); }
+
+.timetable-header .in-charge-badge {
+    background-color: var(--activity-accent);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-top: 0.5rem;
+}
+
 .timetable-header .actions {
-    position: absolute;
-    top: -8px;
-    right: 0;
     display: flex;
     gap: 0.5rem;
+    flex-shrink: 0;
+    align-self: flex-start;
 }
+
 .timetable-header .actions button { 
     box-shadow: none; 
     border: 1px solid var(--border-color);

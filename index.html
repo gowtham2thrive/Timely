@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Intelligent Time Table Generator</title>
+    <link rel="icon" href="timely.webp" type="image/webp">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -48,6 +49,19 @@
                  <div class="slider-group">
                     <label for="lunch-break-at">Lunch Break After Period: <span id="lunch-break-at-value">4</span></label>
                     <input type="range" id="lunch-break-at" min="0" max="12" value="4">
+                </div>
+                <hr class="config-divider">
+                <div class="slider-group">
+                    <label for="max-subjects-per-day">Max Subjects/Day (per subject): <span id="max-subjects-per-day-value">2</span></label>
+                    <input type="range" id="max-subjects-per-day" min="1" max="5" value="2">
+                </div>
+                <div class="slider-group">
+                    <label for="max-labs-per-day">Max Labs/Day (total): <span id="max-labs-per-day-value">1</span></label>
+                    <input type="range" id="max-labs-per-day" min="1" max="3" value="1">
+                </div>
+                <div class="slider-group">
+                    <label for="max-activities-per-day">Max Activities/Day (total): <span id="max-activities-per-day-value">2</span></label>
+                    <input type="range" id="max-activities-per-day" min="1" max="5" value="2">
                 </div>
             </div>
 

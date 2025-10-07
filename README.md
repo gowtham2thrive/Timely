@@ -1,7 +1,3 @@
-Of course. Here is a clean and professional README file for your project's GitHub repository, detailing its capabilities and features.
-
------
-
 # Timely - Intelligent Timetable Generator
 
 **Timely** is a powerful, client-side web application designed to automate the complex and time-consuming task of creating academic timetables. Built with pure JavaScript, it uses a sophisticated constraint-based algorithm to generate optimized schedules for multiple sections, respecting a wide array of user-defined rules and preferences.

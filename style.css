@@ -42,6 +42,8 @@ body {
     background-color: var(--bg-color);
     color: var(--text-color);
     transition: background-color 0.3s ease, color 0.3s ease;
+    height: 100vh;
+    overflow: hidden;
 }
 .material-symbols-outlined { font-size: inherit; vertical-align: bottom; }
 
@@ -65,16 +67,14 @@ body {
     grid-template-columns: 500px minmax(0, 1fr);
     gap: 3rem;
     padding: 3rem;
-    min-height: 100vh;
+    height: 100%;
 }
 .control-panel {
     display: flex;
     flex-direction: column;
     gap: 2.5rem;
-    max-height: calc(100vh - 6rem); 
     overflow-y: auto; 
     padding: 0 1rem;
-    align-self: start; /* <--- THIS IS THE FIX */
 }
 .control-panel::-webkit-scrollbar { width: 8px; }
 .control-panel::-webkit-scrollbar-track { background: transparent; }
@@ -127,6 +127,15 @@ button {
 }
 button:hover { opacity: 0.9; transform: translateY(-1px); }
 .danger-btn { background-color: var(--danger-color); }
+button.secondary-btn {
+    background-color: var(--surface-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+button.secondary-btn:hover {
+    background-color: var(--bg-color);
+}
+
 
 input, select {
     font-family: var(--font-family); width: 100%; padding: 0.8rem;
@@ -196,11 +205,17 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.1); }
     background-color: var(--surface-color); border: 1px solid var(--border-color);
     position: relative;
     box-shadow: var(--shadow);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1rem;
+    align-items: center;
 }
-.faculty-header { margin-bottom: 1rem; }
 .faculty-header h4 { 
     font-size: 1.1rem; font-weight: 600; color: var(--primary-color);
     padding-right: 2rem;
+}
+.faculty-card .subjects-list {
+    grid-column: 1 / -1;
 }
 .subject-tag {
     display: inline-flex; align-items: center; gap: 0.5rem;
@@ -281,18 +296,20 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.1); }
 .course-assignment-card {
     padding: 1.5rem; margin-bottom: 1rem; border-left: 5px solid; position: relative;
     border-radius: var(--radius); border: 1px solid var(--border-color);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 1rem;
 }
 .assignment-grid {
+    grid-column: 1 / -1;
     display: grid;
     grid-template-columns: auto 1fr;
     gap: 0.75rem 1rem;
     align-items: center;
+    margin-top: 1rem;
 }
-.assignment-grid .assignment-details {
-    grid-column: 1 / -1;
-    padding-right: 2rem;
-    margin-bottom: 0.5rem;
-}
+
 .assignment-grid label {
     font-weight: 500;
     font-size: 0.9rem;
@@ -328,32 +345,6 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.1); }
     border-color: var(--surface-color);
 }
 
-details {
-    background-color: var(--bg-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius);
-    padding: 0.75rem 1rem;
-    margin-top: 1rem;
-    transition: background-color 0.2s;
-}
-details:hover { filter: brightness(98%); }
-[data-theme="dark"] details:hover { filter: brightness(120%); }
-details[open] { padding-bottom: 1rem; }
-summary {
-    cursor: pointer;
-    font-weight: 500;
-    list-style: none;
-}
-summary::-webkit-details-marker { display: none; }
-summary::before {
-    content: '▶';
-    display: inline-block;
-    margin-right: 0.5rem;
-    transition: transform 0.2s ease-in-out;
-    font-size: 0.7em;
-    color: var(--text-muted);
-}
-details[open] summary::before { transform: rotate(90deg); }
 .preferences-container {
     display: flex;
     flex-direction: column;
@@ -371,13 +362,19 @@ details[open] summary::before { transform: rotate(90deg); }
 /* ======================= OUTPUT PANEL & TABS ======================= */
 /* =================================================================== */
 .output-panel {
-    padding: 2.5rem;
-    border-radius: var(--radius);
     background-color: var(--surface-color);
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow-lg);
-    max-height: calc(100vh - 6rem);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+#timetables-container {
+    padding: 2.5rem;
     overflow: auto;
+    flex-grow: 1;
 }
 
 .placeholder-card { text-align: center; color: var(--text-muted); padding-top: 5rem; }
@@ -386,7 +383,9 @@ details[open] summary::before { transform: rotate(90deg); }
 .tab-buttons {
     display: flex;
     border-bottom: 1px solid var(--border-color);
-    margin-bottom: 2rem;
+    margin: -2.5rem -2.5rem 2rem -2.5rem;
+    padding: 0 2.5rem;
+    flex-shrink: 0;
 }
 .tab-button {
     background: none;
@@ -398,6 +397,7 @@ details[open] summary::before { transform: rotate(90deg); }
     border-bottom: 3px solid transparent;
     transform: translateY(1px);
     box-shadow: none;
+    position: relative;
 }
 .tab-button:hover {
     color: var(--text-color);
@@ -406,6 +406,18 @@ details[open] summary::before { transform: rotate(90deg); }
     color: var(--primary-color);
     border-bottom-color: var(--primary-color);
 }
+.tab-button.incomplete::after {
+    content: '';
+    position: absolute;
+    top: 1rem;
+    right: 0.75rem;
+    width: 8px;
+    height: 8px;
+    background-color: var(--activity-accent);
+    border-radius: 50%;
+    border: 1px solid var(--surface-color);
+}
+
 .tab-content {
     display: none;
 }
@@ -570,6 +582,11 @@ details[open] summary::before { transform: rotate(90deg); }
     width: 90%; max-width: 600px; position: relative;
     background-color: var(--surface-color);
     box-shadow: var(--shadow);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+.modal-content.large {
+    max-width: 800px;
 }
 .modal-close {
     position: absolute; top: 1rem; right: 1rem; cursor: pointer;
@@ -581,11 +598,11 @@ details[open] summary::before { transform: rotate(90deg); }
 /* ========================== RESPONSIVENESS ========================= */
 /* =================================================================== */
 @media (max-width: 1200px) {
-    .app-container { grid-template-columns: 1fr; padding: 1.5rem; gap: 2rem; }
+    body { height: auto; overflow-y: auto; }
+    .app-container { grid-template-columns: 1fr; padding: 1.5rem; gap: 2rem; height: auto; }
     .control-panel { 
         max-height: none; 
         overflow-y: visible; 
-        align-self: normal;
     }
     .output-panel {
         max-height: 80vh;

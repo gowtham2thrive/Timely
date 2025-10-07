@@ -26,8 +26,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const generateBtn = document.getElementById('generate-btn');
     const timetablesContainer = document.getElementById('timetables-container');
     const outputPlaceholder = document.getElementById('output-placeholder');
-    const modal = document.getElementById('summary-modal');
-    const modalClose = document.querySelector('.modal-close');
+    
+    // Modals
+    const summaryModal = document.getElementById('summary-modal');
+    const facultyModal = document.getElementById('faculty-edit-modal');
+    const assignmentModal = document.getElementById('assignment-prefs-modal');
+
 
     const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     let timetableWorker;
@@ -119,33 +123,15 @@ document.addEventListener('DOMContentLoaded', () => {
         state.faculty.forEach(fac => {
             const card = document.createElement('div');
             card.className = 'faculty-card';
-            const gridCols = `30px repeat(${state.config.periodsPerDay}, 1fr)`;
-
             card.innerHTML = `
-                <button class="icon-btn danger-btn card-delete-btn" onclick="removeFaculty('${fac.id}')" aria-label="Remove faculty ${fac.name}"><span class="material-symbols-outlined">close</span></button>
-                <div class="faculty-header"><h4>${fac.name}</h4></div>
-                <div class="subjects-list">
-                    ${fac.subjects.map(sub => `<div class="subject-tag"><span>${sub.name} (${sub.type})</span><span class="remove-subject-btn material-symbols-outlined" onclick="removeSubjectFromFaculty('${fac.id}', '${sub.id}')" role="button" aria-label="Remove subject ${sub.name}">close</span></div>`).join('')}
-                </div>
-                <div class="add-subject-form">
-                    <label for="subject-name-${fac.id}" class="sr-only">Subject or Lab Name for ${fac.name}</label>
-                    <input type="text" id="subject-name-${fac.id}" placeholder="Subject/Lab Name">
-                    <label for="subject-type-${fac.id}" class="sr-only">Subject Type for ${fac.name}</label>
-                    <select id="subject-type-${fac.id}"><option value="subject">Subject</option><option value="lab">Lab</option><option value="activity">Activity</option></select>
-                    <button onclick="addSubjectToFaculty('${fac.id}')" aria-label="Add subject for ${fac.name}"><span class="material-symbols-outlined">add</span></button>
-                </div>
-                <details class="availability-details">
-                    <summary>Set Availability</summary>
-                    <div class="availability-grid" style="grid-template-columns: ${gridCols};">
-                        <div class="header" aria-hidden="true"></div> ${Array.from({ length: state.config.periodsPerDay }, (_, i) => `<div class="header" aria-hidden="true">P${i + 1}</div>`).join('')}
-                        ${DAYS.map(day => `
-                            <div class="header">${day.substring(0, 3)}</div>
-                            ${Array.from({ length: state.config.periodsPerDay }, (_, p) => `
-                                <input type="checkbox" id="avail-${fac.id}-${day}-${p}" aria-label="Availability for ${fac.name} on ${day} period ${p + 1}" ${(fac.availability?.[day]?.[p] ?? true) ? 'checked' : ''} onchange="updateAvailability('${fac.id}', '${day}', ${p}, this.checked)">
-                            `).join('')}
-                        `).join('')}
+                <div class="faculty-info">
+                     <button class="icon-btn danger-btn card-delete-btn" onclick="removeFaculty('${fac.id}')" aria-label="Remove faculty ${fac.name}"><span class="material-symbols-outlined">close</span></button>
+                    <div class="faculty-header"><h4>${fac.name}</h4></div>
+                    <div class="subjects-list">
+                        ${fac.subjects.map(sub => `<div class="subject-tag"><span>${sub.name} (${sub.type})</span></div>`).join('') || '<p class="text-muted">No subjects assigned.</p>'}
                     </div>
-                </details>
+                </div>
+                <button class="secondary-btn" onclick="showFacultyModal('${fac.id}')"><span class="material-symbols-outlined">edit</span>Manage</button>
             `;
             facultyListContainer.appendChild(card);
         });
@@ -212,37 +198,23 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!fac || !sub) return;
             const card = document.createElement('div');
             card.className = `course-assignment-card ${sub.type}`;
-            const hoursOrInstances = (sub.type === 'lab') ? (assign.instances || 1) : (assign.hours || 1);
+
             card.innerHTML = `
-                <button class="icon-btn danger-btn card-delete-btn" onclick="removeAssignment('${assign.id}')" aria-label="Remove assignment ${sub.name}"><span class="material-symbols-outlined">close</span></button>
-                <div class="assignment-details"><strong>${sub.name}</strong> <span>by ${fac.name}</span></div>
-                <div class="assignment-grid">
-                    ${sub.type === 'lab' ? 
-                        `<label>Periods/Instance</label><input type="number" value="${assign.periods || 2}" min="1" onchange="updateAssignment('${assign.id}', 'periods', this.value)" aria-label="Periods per instance for ${sub.name}">
-                         <label>Instances/Week</label><input type="number" value="${assign.instances || 1}" min="1" onchange="updateAssignment('${assign.id}', 'instances', this.value)" aria-label="Instances per week for ${sub.name}">` :
-                        `<label>Hours/Week</label><input type="number" value="${assign.hours || 1}" min="1" onchange="updateAssignment('${assign.id}', 'hours', this.value)" aria-label="Hours per week for ${sub.name}">`
-                    }
+                <div class="assignment-details">
+                    <button class="icon-btn danger-btn card-delete-btn" onclick="removeAssignment('${assign.id}')" aria-label="Remove assignment ${sub.name}"><span class="material-symbols-outlined">close</span></button>
+                    <strong>${sub.name}</strong> <span>by ${fac.name}</span>
+                    <div class="assignment-grid">
+                        ${sub.type === 'lab' ? 
+                            `<label>Periods/Instance</label><input type="number" value="${assign.periods || 2}" min="1" onchange="updateAssignment('${assign.id}', 'periods', this.value)" aria-label="Periods per instance for ${sub.name}">
+                             <label>Instances/Week</label><input type="number" value="${assign.instances || 1}" min="1" onchange="updateAssignment('${assign.id}', 'instances', this.value)" aria-label="Instances per week for ${sub.name}">` :
+                            `<label>Hours/Week</label><input type="number" value="${assign.hours || 1}" min="1" onchange="updateAssignment('${assign.id}', 'hours', this.value)" aria-label="Hours per week for ${sub.name}">`
+                        }
+                    </div>
                 </div>
-                <details><summary>Set Period Preferences</summary><div class="preferences-container">${generatePreferencesHTML(assign, hoursOrInstances)}</div></details>`;
+                <button class="secondary-btn" onclick="showAssignmentPrefsModal('${assign.id}')"><span class="material-symbols-outlined">tune</span>Preferences</button>
+                `;
             container.appendChild(card);
         });
-    }
-
-    function generatePreferencesHTML(assignment, count) {
-        let html = '';
-        const periods = ['Any Period', ...Array.from({ length: state.config.periodsPerDay }, (_, i) => `Period ${i + 1}`)];
-        if (!assignment.preferences) assignment.preferences = [];
-        for (let i = 0; i < count; i++) {
-            const pref = assignment.preferences[i] || { day: 'Any Day', period: 'Any Period' };
-            const dayOptions = ['Any Day', ...DAYS].map(d => `<option value="${d}" ${pref.day === d ? 'selected' : ''}>${d}</option>`).join('');
-            html += `<div class="preference-row">
-                <label class="sr-only" for="pref-day-${assignment.id}-${i}">Preference Day ${i+1}</label>
-                <select id="pref-day-${assignment.id}-${i}" onchange="updatePreference('${assignment.id}', ${i}, 'day', this.value)">${dayOptions}</select>
-                <label class="sr-only" for="pref-period-${assignment.id}-${i}">Preference Period ${i+1}</label>
-                <select id="pref-period-${assignment.id}-${i}" onchange="updatePreference('${assignment.id}', ${i}, 'period', this.value)">${periods.map(p => `<option value="${p}" ${pref.period === p ? 'selected' : ''}>${p}</option>`).join('')}</select>
-                </div>`;
-        }
-        return html;
     }
     
     // EVENT HANDLERS & ACTIONS
@@ -360,7 +332,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (name && fac && !fac.subjects.find(s => s.name === name)) {
             fac.subjects.push({ id: `sub-${Date.now()}`, name, type });
             nameInput.value = '';
-            renderAll();
+            showFacultyModal(facId); // Re-render the modal content
+            renderFaculty(); // Re-render the main faculty list
+            saveState();
         }
     };
     window.removeSubjectFromFaculty = (facId, subId) => {
@@ -368,6 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(fac) fac.subjects = fac.subjects.filter(s => s.id !== subId);
         for(const secId in state.assignments) { state.assignments[secId] = state.assignments[secId].filter(a => a.subjectId !== subId); }
         lastGenerationResults = null;
+        showFacultyModal(facId); // Re-render the modal content
         renderAll();
     };
     window.removeSection = (secId) => {
@@ -465,6 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function renderOutputArea() {
+        if (!timetablesContainer) return;
         timetablesContainer.innerHTML = ''; 
         if (lastGenerationResults) {
             renderAllTimetables(lastGenerationResults);
@@ -531,7 +507,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function renderAllTimetables(results) {
-        // FIX: This function must always clear the container first
         timetablesContainer.innerHTML = '';
         outputPlaceholder.style.display = 'none';
         
@@ -553,12 +528,28 @@ document.addEventListener('DOMContentLoaded', () => {
             button.dataset.sectionId = section.id;
             button.textContent = section.name;
 
+            const timetable = results.timetables[section.id];
+            let hasEmptySlots = false;
+            if (timetable) {
+                for (const day of DAYS) {
+                    for (let i = 0; i < state.config.periodsPerDay; i++) {
+                        const isLunchBreak = state.config.lunchBreakAt > 0 && i === state.config.lunchBreakAt;
+                        if (!isLunchBreak && (!timetable[day][i] || timetable[day][i].length === 0)) {
+                            hasEmptySlots = true;
+                            break;
+                        }
+                    }
+                    if(hasEmptySlots) break;
+                }
+            }
+            if(hasEmptySlots) button.classList.add('incomplete');
+
+
             const content = document.createElement('div');
             content.className = 'tab-content';
             if (index === 0) content.classList.add('active');
             content.id = `content-${section.id}`;
-
-            const timetable = results.timetables[section.id];
+            
             const unassigned = results.unassigned[section.id] || [];
             const inCharge = state.faculty.find(f => f.id === section.inCharge);
             
@@ -703,8 +694,82 @@ document.addEventListener('DOMContentLoaded', () => {
                 modalBody.innerHTML += `</ul>`;
             }
         });
-        modal.style.display = 'flex';
+        summaryModal.style.display = 'flex';
     }
+
+    window.showFacultyModal = (facId) => {
+        const fac = state.faculty.find(f => f.id === facId);
+        if (!fac) return;
+        
+        document.getElementById('faculty-modal-title').textContent = `Manage ${fac.name}`;
+        const modalBody = document.getElementById('faculty-modal-body');
+        const gridCols = `30px repeat(${state.config.periodsPerDay}, 1fr)`;
+
+        modalBody.innerHTML = `
+            <h4>Subjects Taught</h4>
+            <div class="subjects-list" style="margin-bottom: 1rem;">
+                ${fac.subjects.map(sub => `<div class="subject-tag"><span>${sub.name} (${sub.type})</span><span class="remove-subject-btn material-symbols-outlined" onclick="removeSubjectFromFaculty('${fac.id}', '${sub.id}')" role="button" aria-label="Remove subject ${sub.name}">close</span></div>`).join('') || '<p class="text-muted">No subjects assigned yet.</p>'}
+            </div>
+            <div class="add-subject-form">
+                <label for="subject-name-${fac.id}" class="sr-only">Subject or Lab Name for ${fac.name}</label>
+                <input type="text" id="subject-name-${fac.id}" placeholder="Subject/Lab Name">
+                <label for="subject-type-${fac.id}" class="sr-only">Subject Type for ${fac.name}</label>
+                <select id="subject-type-${fac.id}"><option value="subject">Subject</option><option value="lab">Lab</option><option value="activity">Activity</option></select>
+                <button onclick="addSubjectToFaculty('${fac.id}')" aria-label="Add subject for ${fac.name}"><span class="material-symbols-outlined">add</span></button>
+            </div>
+            <hr class="config-divider">
+            <h4>Set Availability</h4>
+            <div class="availability-grid" style="grid-template-columns: ${gridCols};">
+                <div class="header" aria-hidden="true"></div> ${Array.from({ length: state.config.periodsPerDay }, (_, i) => `<div class="header" aria-hidden="true">P${i + 1}</div>`).join('')}
+                ${DAYS.map(day => `
+                    <div class="header">${day.substring(0, 3)}</div>
+                    ${Array.from({ length: state.config.periodsPerDay }, (_, p) => `
+                        <input type="checkbox" id="avail-${fac.id}-${day}-${p}" aria-label="Availability for ${fac.name} on ${day} period ${p + 1}" ${(fac.availability?.[day]?.[p] ?? true) ? 'checked' : ''} onchange="updateAvailability('${fac.id}', '${day}', ${p}, this.checked)">
+                    `).join('')}
+                `).join('')}
+            </div>
+        `;
+        facultyModal.style.display = 'flex';
+    };
+
+    window.showAssignmentPrefsModal = (assignId) => {
+        let assignment, sectionId;
+        for (const secId in state.assignments) {
+            const found = state.assignments[secId].find(a => a.id === assignId);
+            if (found) {
+                assignment = found;
+                sectionId = secId;
+                break;
+            }
+        }
+        if (!assignment) return;
+        
+        const fac = state.faculty.find(f => f.id === assignment.facultyId);
+        const sub = fac?.subjects.find(s => s.id === assignment.subjectId);
+        
+        document.getElementById('assignment-modal-title').textContent = `Preferences for ${sub.name}`;
+        const modalBody = document.getElementById('assignment-modal-body');
+        
+        const count = (sub.type === 'lab') ? (assignment.instances || 1) : (assignment.hours || 1);
+        let html = '<div class="preferences-container">';
+        const periods = ['Any Period', ...Array.from({ length: state.config.periodsPerDay }, (_, i) => `Period ${i + 1}`)];
+        if (!assignment.preferences) assignment.preferences = [];
+
+        for (let i = 0; i < count; i++) {
+            const pref = assignment.preferences[i] || { day: 'Any Day', period: 'Any Period' };
+            const dayOptions = ['Any Day', ...DAYS].map(d => `<option value="${d}" ${pref.day === d ? 'selected' : ''}>${d}</option>`).join('');
+            html += `<div class="preference-row">
+                <span>Instance ${i + 1}:</span>
+                <label class="sr-only" for="pref-day-${assignment.id}-${i}">Preference Day ${i+1}</label>
+                <select id="pref-day-${assignment.id}-${i}" onchange="updatePreference('${assignment.id}', ${i}, 'day', this.value)">${dayOptions}</select>
+                <label class="sr-only" for="pref-period-${assignment.id}-${i}">Preference Period ${i+1}</label>
+                <select id="pref-period-${assignment.id}-${i}" onchange="updatePreference('${assignment.id}', ${i}, 'period', this.value)">${periods.map(p => `<option value="${p}" ${pref.period === p ? 'selected' : ''}>${p}</option>`).join('')}</select>
+                </div>`;
+        }
+        html += '</div>';
+        modalBody.innerHTML = html;
+        assignmentModal.style.display = 'flex';
+    };
 
 
     async function downloadPDF(e) {
@@ -849,8 +914,17 @@ document.addEventListener('DOMContentLoaded', () => {
         return lines;
     }
     
-    modalClose.addEventListener('click', () => modal.style.display = 'none');
-    window.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+    // Setup modal closing
+    [summaryModal, facultyModal, assignmentModal].forEach(modal => {
+        if(modal) {
+            modal.querySelector('.modal-close').addEventListener('click', () => modal.style.display = 'none');
+        }
+    });
+    window.addEventListener('click', (e) => { 
+        if (e.target.classList.contains('modal')) {
+            e.target.style.display = 'none'; 
+        }
+    });
 
     function formatMinutes(m) { const h = Math.floor(m / 60); const min = m % 60; return `${h % 12 === 0 ? 12 : h % 12}:${min.toString().padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`; }
     function formatTime(v) { return formatMinutes(7 * 60 + v * 15); }
@@ -870,7 +944,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEnterKeySubmission('faculty-name-input', 'add-faculty-btn');
     setupEnterKeySubmission('section-name-input', 'add-section-btn');
 
-    facultyListContainer.addEventListener('keydown', (event) => {
+    document.body.addEventListener('keydown', (event) => {
         if (event.key === 'Enter' && event.target.matches('input[id^="subject-name-"]')) {
             event.preventDefault();
             const form = event.target.closest('.add-subject-form');

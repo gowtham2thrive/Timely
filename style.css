@@ -502,6 +502,27 @@ details[open] summary::before { transform: rotate(90deg); }
     border: 1px solid rgba(251, 113, 133, 0.2);
 }
 
+.faculty-list {
+    margin-top: 1.5rem;
+}
+
+.faculty-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+.faculty-table th, .faculty-table td {
+    border: 1px solid var(--border-color);
+    padding: 0.75rem;
+    text-align: left;
+}
+
+.faculty-table th {
+    background-color: var(--bg-color);
+    font-weight: 600;
+}
 
 /* =================================================================== */
 /* ============================== MODAL ============================== */

@@ -519,7 +519,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentTime = end;
             }
             
-            // Build the faculty map for this section
             const facultyMap = {};
             state.assignments[section.id].forEach(assign => {
                 const fac = state.faculty.find(f => f.id === assign.facultyId);
@@ -530,14 +529,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            // Generate HTML for the faculty list
-            const facultyListHTML = Object.entries(facultyMap).map(([name, subs]) => {
+            // THIS IS THE CHANGE: Generate HTML for the faculty table
+            const facultyTableRowsHTML = Object.entries(facultyMap).map(([name, subs]) => {
                 let displayName = name;
                 if (inCharge && inCharge.name === name) {
                     displayName += " (Incharge)";
                 }
-                return `<li><strong>${displayName}:</strong> ${Array.from(subs).join(', ')}</li>`;
+                return `<tr>
+                            <td>${displayName}</td>
+                            <td>${Array.from(subs).join(', ')}</td>
+                        </tr>`;
             }).join('');
+
+            const facultyHTML = facultyTableRowsHTML ? `
+                <div class="faculty-list">
+                    <h4>Faculty & Coordinators</h4>
+                    <table class="faculty-table">
+                        <thead><tr><th>Faculty</th><th>Subjects</th></tr></thead>
+                        <tbody>${facultyTableRowsHTML}</tbody>
+                    </table>
+                </div>` : '';
+
 
             card.innerHTML = `
                 <div class="timetable-header">
@@ -588,10 +600,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     acc[key] = (acc[key] || 0) + 1;
                     return acc;
                 }, {});
-
             const unassignedHTML = unassigned.length > 0 ? `<div class="unassigned-list"><h4><span class="material-symbols-outlined">warning</span>Unassigned Courses</h4><ul>${Object.entries(unassignedCounts).map(([name, count]) => `<li><strong>${name}</strong> (${count}x unassigned)</li>`).join('')}</ul></div>` : '';
-            const facultyHTML = facultyListHTML ? `<div class="faculty-list"><h4>Faculty & Coordinators</h4><ul>${facultyListHTML}</ul></div>` : '';
-
+            
             const infoContainer = document.createElement('div');
             infoContainer.className = 'timetable-info';
             infoContainer.innerHTML = facultyHTML + unassignedHTML;
@@ -688,7 +698,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             currentY -= rowHeight;
         });
-
+        
+        // THIS IS THE CHANGE: Faculty list is now drawn as a table
         const facultyMap = {};
         state.assignments[sectionId]?.forEach(a => { 
             const fac = state.faculty.find(f => f.id === a.facultyId); 
@@ -701,7 +712,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (Object.keys(facultyMap).length > 0) {
             currentY -= 20;
-            if (currentY < 100) { 
+            if (currentY < 150) { 
                 page = pdfDoc.addPage([841.89, 595.28]);
                 currentY = height - margin;
             }
@@ -709,17 +720,44 @@ document.addEventListener('DOMContentLoaded', () => {
             page.drawText('Faculty & Subject Assignments', { x: margin, y: currentY, font: boldFont, size: 14, color: colors.title });
             currentY -= 25;
 
+            const facultyColWidth = 150;
+            const subjectColWidth = width - (2 * margin) - facultyColWidth;
+            const tableHeaderY = currentY;
+
+            page.drawRectangle({ x: margin, y: tableHeaderY - 22, width: facultyColWidth, height: 22, color: colors.headerBg, borderColor: colors.border, borderWidth: 0.5 });
+            page.drawRectangle({ x: margin + facultyColWidth, y: tableHeaderY - 22, width: subjectColWidth, height: 22, color: colors.headerBg, borderColor: colors.border, borderWidth: 0.5 });
+            page.drawText('Faculty', { x: margin + 5, y: tableHeaderY - 15, font: boldFont, size: 10 });
+            page.drawText('Subjects', { x: margin + facultyColWidth + 5, y: tableHeaderY - 15, font: boldFont, size: 10 });
+            currentY -= 22;
+
             Object.entries(facultyMap).forEach(([name, subs]) => {
                 let displayName = name;
                 if (inCharge && inCharge.name === name) {
                     displayName += " (Incharge)";
                 }
-                const text = `  • ${displayName}: ${Array.from(subs).join(', ')}`;
-                page.drawText(text, { x: margin, y: currentY, font: font, size: 10 });
-                currentY -= 15;
+                const subjectsText = Array.from(subs).join(', ');
+                const wrappedSubs = getWrappedText(subjectsText, font, 9, subjectColWidth - 10);
+                const requiredHeight = Math.max(22, wrappedSubs.length * 12 + 10);
+
+                if (currentY - requiredHeight < margin) {
+                    page = pdfDoc.addPage([841.89, 595.28]);
+                    currentY = height - margin;
+                }
+                
+                page.drawRectangle({ x: margin, y: currentY - requiredHeight, width: facultyColWidth, height: requiredHeight, borderColor: colors.border, borderWidth: 0.5 });
+                page.drawRectangle({ x: margin + facultyColWidth, y: currentY - requiredHeight, width: subjectColWidth, height: requiredHeight, borderColor: colors.border, borderWidth: 0.5 });
+                
+                page.drawText(displayName, { x: margin + 5, y: currentY - requiredHeight / 2 - 4, font: font, size: 9 });
+                
+                let lineY = currentY - (requiredHeight / 2) + ((wrappedSubs.length - 1) * 6) - 2;
+                wrappedSubs.forEach(line => {
+                    page.drawText(line, { x: margin + facultyColWidth + 5, y: lineY, font: font, size: 9 });
+                    lineY -= 12;
+                });
+
+                currentY -= requiredHeight;
             });
         }
-
 
         const pdfBytes = await pdfDoc.save();
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
@@ -727,6 +765,25 @@ document.addEventListener('DOMContentLoaded', () => {
         link.href = URL.createObjectURL(blob);
         link.download = `${section.name}_Timetable.pdf`;
         link.click();
+    }
+    
+    function getWrappedText(text, font, size, maxWidth) {
+        const words = text.split(' ');
+        if (words.length === 0) return [];
+        let lines = [];
+        let currentLine = words[0];
+        for (let i = 1; i < words.length; i++) {
+            const word = words[i];
+            const width = font.widthOfTextAtSize(currentLine + " " + word, size);
+            if (width < maxWidth) {
+                currentLine += " " + word;
+            } else {
+                lines.push(currentLine);
+                currentLine = word;
+            }
+        }
+        lines.push(currentLine);
+        return lines;
     }
     
     modalClose.addEventListener('click', () => modal.style.display = 'none');

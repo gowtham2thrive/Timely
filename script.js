@@ -122,24 +122,26 @@ document.addEventListener('DOMContentLoaded', () => {
             const gridCols = `30px repeat(${state.config.periodsPerDay}, 1fr)`;
 
             card.innerHTML = `
-                <button class="icon-btn danger-btn card-delete-btn" onclick="removeFaculty('${fac.id}')"><span class="material-symbols-outlined">close</span></button>
+                <button class="icon-btn danger-btn card-delete-btn" onclick="removeFaculty('${fac.id}')" aria-label="Remove faculty ${fac.name}"><span class="material-symbols-outlined">close</span></button>
                 <div class="faculty-header"><h4>${fac.name}</h4></div>
                 <div class="subjects-list">
-                    ${fac.subjects.map(sub => `<div class="subject-tag"><span>${sub.name} (${sub.type})</span><span class="remove-subject-btn material-symbols-outlined" onclick="removeSubjectFromFaculty('${fac.id}', '${sub.id}')">close</span></div>`).join('')}
+                    ${fac.subjects.map(sub => `<div class="subject-tag"><span>${sub.name} (${sub.type})</span><span class="remove-subject-btn material-symbols-outlined" onclick="removeSubjectFromFaculty('${fac.id}', '${sub.id}')" role="button" aria-label="Remove subject ${sub.name}">close</span></div>`).join('')}
                 </div>
                 <div class="add-subject-form">
+                    <label for="subject-name-${fac.id}" class="sr-only">Subject or Lab Name for ${fac.name}</label>
                     <input type="text" id="subject-name-${fac.id}" placeholder="Subject/Lab Name">
+                    <label for="subject-type-${fac.id}" class="sr-only">Subject Type for ${fac.name}</label>
                     <select id="subject-type-${fac.id}"><option value="subject">Subject</option><option value="lab">Lab</option><option value="activity">Activity</option></select>
-                    <button onclick="addSubjectToFaculty('${fac.id}')"><span class="material-symbols-outlined">add</span></button>
+                    <button onclick="addSubjectToFaculty('${fac.id}')" aria-label="Add subject for ${fac.name}"><span class="material-symbols-outlined">add</span></button>
                 </div>
                 <details class="availability-details">
                     <summary>Set Availability</summary>
                     <div class="availability-grid" style="grid-template-columns: ${gridCols};">
-                        <div class="header"></div> ${Array.from({ length: state.config.periodsPerDay }, (_, i) => `<div class="header">P${i + 1}</div>`).join('')}
+                        <div class="header" aria-hidden="true"></div> ${Array.from({ length: state.config.periodsPerDay }, (_, i) => `<div class="header" aria-hidden="true">P${i + 1}</div>`).join('')}
                         ${DAYS.map(day => `
                             <div class="header">${day.substring(0, 3)}</div>
                             ${Array.from({ length: state.config.periodsPerDay }, (_, p) => `
-                                <input type="checkbox" id="avail-${fac.id}-${day}-${p}" ${(fac.availability?.[day]?.[p] ?? true) ? 'checked' : ''} onchange="updateAvailability('${fac.id}', '${day}', ${p}, this.checked)">
+                                <input type="checkbox" id="avail-${fac.id}-${day}-${p}" aria-label="Availability for ${fac.name} on ${day} period ${p + 1}" ${(fac.availability?.[day]?.[p] ?? true) ? 'checked' : ''} onchange="updateAvailability('${fac.id}', '${day}', ${p}, this.checked)">
                             `).join('')}
                         `).join('')}
                     </div>
@@ -156,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const tag = document.createElement('div');
             tag.className = 'section-tag';
             tag.textContent = section.name;
-            tag.innerHTML += `<span class="remove-tag material-symbols-outlined" onclick="removeSection('${section.id}')">close</span>`;
+            tag.innerHTML += `<span class="remove-tag material-symbols-outlined" onclick="removeSection('${section.id}')" role="button" aria-label="Remove section ${section.name}">close</span>`;
             sectionTagsContainer.appendChild(tag);
             renderSectionAssignmentBlock(section);
         });
@@ -170,33 +172,32 @@ document.addEventListener('DOMContentLoaded', () => {
         const assignedFacultyIds = new Set(state.assignments[section.id].map(a => a.facultyId));
         const existingInCharges = new Set(state.sections.filter(s => s.id !== section.id).map(s => s.inCharge).filter(id => id));
 
-        const inChargeOptions = state.faculty
+        let inChargeOptions = state.faculty
             .filter(f => assignedFacultyIds.has(f.id) && !existingInCharges.has(f.id))
             .map(f => `<option value="${f.id}" ${section.inCharge === f.id ? 'selected' : ''}>${f.name}</option>`).join('');
+        
+        const currentInCharge = state.faculty.find(f => f.id === section.inCharge);
+        if (currentInCharge && existingInCharges.has(currentInCharge.id)) {
+            inChargeOptions = `<option value="${currentInCharge.id}" selected>${currentInCharge.name}</option>` + inChargeOptions;
+        }
 
         const facultyOptions = state.faculty.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
         
-        // Ensure the current in-charge is in the list even if they are an in-charge elsewhere (for display purposes)
-        const currentInCharge = state.faculty.find(f => f.id === section.inCharge);
-        let finalOptions = inChargeOptions;
-        if (currentInCharge && existingInCharges.has(currentInCharge.id)) {
-            finalOptions = `<option value="${currentInCharge.id}" selected>${currentInCharge.name}</option>` + finalOptions;
-        }
-
-
         block.innerHTML = `
             <h3>${section.name} - Course Assignments</h3>
             <div class="in-charge-selector">
                 <label for="in-charge-select-${section.id}">In-Charge:</label>
-                <select id="in-charge-select-${section.id}" onchange="updateInCharge('${section.id}', this.value)" ${!finalOptions ? 'disabled' : ''}>
-                    ${finalOptions || '<option>-- No staff available --</option>'}
+                <select id="in-charge-select-${section.id}" onchange="updateInCharge('${section.id}', this.value)" ${!inChargeOptions && !section.inCharge ? 'disabled' : ''}>
+                    ${inChargeOptions || '<option>-- No staff available --</option>'}
                 </select>
             </div>
             <div id="assignments-list-${section.id}"></div>
             <div class="add-form">
+                <label for="faculty-select-${section.id}" class="sr-only">Select Faculty for ${section.name}</label>
                 <select id="faculty-select-${section.id}" onchange="updateSubjectSelect('${section.id}')"><option value="">-- Select Faculty --</option>${facultyOptions}</select>
+                <label for="subject-select-${section.id}" class="sr-only">Select Subject for ${section.name}</label>
                 <select id="subject-select-${section.id}" disabled><option value="">-- Select Subject --</option></select>
-                <button onclick="addAssignment('${section.id}')"><span class="material-symbols-outlined">add_task</span>Assign</button>
+                <button onclick="addAssignment('${section.id}')" aria-label="Assign course to ${section.name}"><span class="material-symbols-outlined">add_task</span>Assign</button>
             </div>`;
         coursesContainer.appendChild(block);
         renderAssignmentsForSection(section.id);
@@ -213,13 +214,13 @@ document.addEventListener('DOMContentLoaded', () => {
             card.className = `course-assignment-card ${sub.type}`;
             const hoursOrInstances = (sub.type === 'lab') ? (assign.instances || 1) : (assign.hours || 1);
             card.innerHTML = `
-                <button class="icon-btn danger-btn card-delete-btn" onclick="removeAssignment('${assign.id}')"><span class="material-symbols-outlined">close</span></button>
+                <button class="icon-btn danger-btn card-delete-btn" onclick="removeAssignment('${assign.id}')" aria-label="Remove assignment ${sub.name}"><span class="material-symbols-outlined">close</span></button>
                 <div class="assignment-details"><strong>${sub.name}</strong> <span>by ${fac.name}</span></div>
                 <div class="assignment-grid">
                     ${sub.type === 'lab' ? 
-                        `<label>Periods/Instance</label><input type="number" value="${assign.periods || 2}" min="1" onchange="updateAssignment('${assign.id}', 'periods', this.value)">
-                         <label>Instances/Week</label><input type="number" value="${assign.instances || 1}" min="1" onchange="updateAssignment('${assign.id}', 'instances', this.value)">` :
-                        `<label>Hours/Week</label><input type="number" value="${assign.hours || 1}" min="1" onchange="updateAssignment('${assign.id}', 'hours', this.value)">`
+                        `<label>Periods/Instance</label><input type="number" value="${assign.periods || 2}" min="1" onchange="updateAssignment('${assign.id}', 'periods', this.value)" aria-label="Periods per instance for ${sub.name}">
+                         <label>Instances/Week</label><input type="number" value="${assign.instances || 1}" min="1" onchange="updateAssignment('${assign.id}', 'instances', this.value)" aria-label="Instances per week for ${sub.name}">` :
+                        `<label>Hours/Week</label><input type="number" value="${assign.hours || 1}" min="1" onchange="updateAssignment('${assign.id}', 'hours', this.value)" aria-label="Hours per week for ${sub.name}">`
                     }
                 </div>
                 <details><summary>Set Period Preferences</summary><div class="preferences-container">${generatePreferencesHTML(assign, hoursOrInstances)}</div></details>`;
@@ -235,8 +236,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const pref = assignment.preferences[i] || { day: 'Any Day', period: 'Any Period' };
             const dayOptions = ['Any Day', ...DAYS].map(d => `<option value="${d}" ${pref.day === d ? 'selected' : ''}>${d}</option>`).join('');
             html += `<div class="preference-row">
-                <select onchange="updatePreference('${assignment.id}', ${i}, 'day', this.value)">${dayOptions}</select>
-                <select onchange="updatePreference('${assignment.id}', ${i}, 'period', this.value)">${periods.map(p => `<option value="${p}" ${pref.period === p ? 'selected' : ''}>${p}</option>`).join('')}</select>
+                <label class="sr-only" for="pref-day-${assignment.id}-${i}">Preference Day ${i+1}</label>
+                <select id="pref-day-${assignment.id}-${i}" onchange="updatePreference('${assignment.id}', ${i}, 'day', this.value)">${dayOptions}</select>
+                <label class="sr-only" for="pref-period-${assignment.id}-${i}">Preference Period ${i+1}</label>
+                <select id="pref-period-${assignment.id}-${i}" onchange="updatePreference('${assignment.id}', ${i}, 'period', this.value)">${periods.map(p => `<option value="${p}" ${pref.period === p ? 'selected' : ''}>${p}</option>`).join('')}</select>
                 </div>`;
         }
         return html;

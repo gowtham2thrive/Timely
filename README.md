@@ -2,7 +2,7 @@
 
 **Timely** is a powerful, client-side web application designed to automate the complex and time-consuming task of creating academic timetables. Built with pure JavaScript, it uses a sophisticated constraint-based algorithm to generate optimized schedules for multiple sections, respecting a wide array of user-defined rules and preferences.
 
-Website Link:- https://gowtham2thrive.github.io/Timely/
+🔗Website Link:- https://gowtham2thrive.github.io/Timely/
 
 The entire generation process runs in the user's browser, ensuring data privacy and fast performance without any server-side dependency.
 
